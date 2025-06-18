@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Station Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .price-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .error {
+            border-color: #e74c3c !important;
+            background: #fdf2f2 !important;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .alert {
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 12px;
+            display: none;
+            position: relative;
+            animation: alertSlide 0.3s ease-out;
+        }
+
+        @keyframes alertSlide {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .form-container {
+                padding: 25px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .price-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Parking Station Manager</h1>
+            <p>Add new parking station details to the system</p>
+        </div>
+
+        <div class="form-container">
+            <div id="alertContainer"></div>
+
+            <form id="parkingForm" action="/register_station" method="POST">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="stationName">Station Name *</label>
+                        <input type="text" id="stationName" name="stationName" required>
+                        <div class="error-message" id="stationNameError">Station name is required</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="managerName">Manager Name *</label>
+                        <input type="text" id="managerName" name="managerName" required>
+                        <div class="error-message" id="managerNameError">Manager name is required</div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="address">Address *</label>
+                        <textarea id="address" name="address" placeholder="Enter complete address..."
+                            required></textarea>
+                        <div class="error-message" id="addressError">Address is required</div>
+                        <button type="button" onclick="getLocation()" style="margin-top: 5px;">
+                            📍 Use My Location
+                        </button>
+
+                    </div>
+
+                    <div class="form-group">
+                        <label for="totalCapacity">Total Capacity *</label>
+                        <input type="number" id="totalCapacity" name="totalCapacity" min="1" max="10000" required>
+                        <div class="error-message" id="totalCapacityError">Please enter a valid capacity (1-10000)</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contactNumber">Contact Number</label>
+                        <input type="tel" id="contactNumber" name="contactNumber" pattern="[0-9+\-\s()]+">
+                        <div class="error-message" id="contactNumberError">Please enter a valid phone number</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Pricing Details *</label>
+                    <div class="price-grid">
+                        <div class="form-group">
+                            <label for="hourlyRate">Hourly Rate ($) *</label>
+                            <input type="number" id="hourlyRate" name="hourlyRate" step="0.01" min="0" required>
+                            <div class="error-message" id="hourlyRateError">Hourly rate is required</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dailyRate">Daily Rate ($) *</label>
+                            <input type="number" id="dailyRate" name="dailyRate" step="0.01" min="0" required>
+                            <div class="error-message" id="dailyRateError">Daily rate is required</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="monthlyRate">Monthly Rate ($)</label>
+                            <input type="number" id="monthlyRate" name="monthlyRate" step="0.01" min="0">
+                            <div class="error-message" id="monthlyRateError">Please enter a valid monthly rate</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <span class="btn-text">Add Parking Station</span>
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('parkingForm');
+        const submitBtn = document.querySelector('.submit-btn');
+        const btnText = document.querySelector('.btn-text');
+        const loading = document.querySelector('.loading');
+        const alertContainer = document.getElementById('alertContainer');
+
+        // Validation patterns
+        const patterns = {
+            name: /^[a-zA-Z\s]{2,50}$/,
+            phone: /^[+]?[\d\s\-()]{10,15}$/,
+            capacity: /^\d{1,5}$/,
+            price: /^\d+(\.\d{1,2})?$/
+        };
+
+        // Real-time validation
+        const inputs = form.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('blur', () => validateField(input));
+            input.addEventListener('input', () => {
+                if (input.classList.contains('error')) {
+                    validateField(input);
+                }
+            });
+        });
+
+        function validateField(field) {
+            const value = field.value.trim();
+            const fieldName = field.name;
+            const errorElement = document.getElementById(fieldName + 'Error');
+            let isValid = true;
+            let errorMessage = '';
+
+            // Reset
+            field.classList.remove('error');
+            errorElement.style.display = 'none';
+
+            // Required field validation
+            if (field.required && !value) {
+                isValid = false;
+                errorMessage = `${field.previousElementSibling.textContent.replace(' *', '')} is required`;
+            }
+            // Specific field validations
+            else if (value) {
+                switch (fieldName) {
+                    case 'stationName':
+                    case 'managerName':
+                        if (value.length < 2 || value.length > 50) {
+                            isValid = false;
+                            errorMessage = 'Please enter a valid name (2-50 characters)';
+                        }
+                        break;
+                    case 'contactNumber':
+                        if (value && value.length < 10) {
+                            isValid = false;
+                            errorMessage = 'Please enter a valid phone number (minimum 10 digits)';
+                        }
+                        break;
+                    case 'totalCapacity':
+                        if (parseInt(value) < 1 || parseInt(value) > 10000) {
+                            isValid = false;
+                            errorMessage = 'Capacity must be between 1 and 10,000';
+                        }
+                        break;
+                    case 'hourlyRate':
+                    case 'dailyRate':
+                    case 'monthlyRate':
+                        if (parseFloat(value) < 0) {
+                            isValid = false;
+                            errorMessage = 'Please enter a valid price (positive number)';
+                        }
+                        break;
+                    case 'address':
+                        if (value.length < 10) {
+                            isValid = false;
+                            errorMessage = 'Please enter a complete address (minimum 10 characters)';
+                        }
+                        break;
+                }
+            }
+
+            if (!isValid) {
+                field.classList.add('error');
+                errorElement.textContent = errorMessage;
+                errorElement.style.display = 'block';
+            }
+
+            return isValid;
+        }
+
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-' + type;
+            alert.style.display = 'block'; // Force display
+
+            const msgText = document.createElement('span');
+            msgText.textContent = message;
+
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = '×';
+            closeBtn.className = 'close-btn';
+            closeBtn.onclick = function () {
+                alert.remove();
+            };
+
+            alert.appendChild(msgText);
+            alert.appendChild(closeBtn);
+
+            // Clear previous alerts and add new one
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+
+            // Auto remove success alerts after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    if (alert.parentElement) {
+                        alert.remove();
+                    }
+                }, 5000);
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Validate all fields
+            let isFormValid = true;
+            inputs.forEach(input => {
+                if (!validateField(input)) {
+                    isFormValid = false;
+                }
+            });
+
+            if (!isFormValid) {
+                showAlert('Please correct the errors above before submitting.', 'error');
+                return;
+            }
+
+            // Show loading state
+            submitBtn.disabled = true;
+            btnText.style.opacity = '0';
+            loading.style.display = 'block';
+
+            // Prepare form data
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            // Convert numeric fields
+            data.totalCapacity = parseInt(data.totalCapacity);
+            data.hourlyRate = parseFloat(data.hourlyRate);
+            data.dailyRate = parseFloat(data.dailyRate);
+            if (data.monthlyRate) data.monthlyRate = parseFloat(data.monthlyRate);
+
+            try {
+                const response = await fetch('/register_station', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                let result;
+                const contentType = response.headers.get('content-type');
+
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    // If response is not JSON, treat it as an error
+                    const text = await response.text();
+                    throw new Error('Server returned non-JSON response. Check your Flask route.');
+                }
+
+                if (response.ok) {
+                    showAlert(`🎉 Station Registered Successfully! Station ID: ${result.station_id}`, 'success');
+
+                    // Create download link if file is available
+                    if (result.download_file) {
+                        const downloadLink = document.createElement('div');
+                        downloadLink.className = 'alert alert-success';
+                        downloadLink.style.display = 'block';
+                        downloadLink.style.marginTop = '10px';
+                        downloadLink.innerHTML = `
+                            📄 <a href="/download/${result.download_file}" download style="color: #155724; text-decoration: underline;">
+                                Click here to download your station confirmation file
+                            </a>
+                        `;
+                        alertContainer.appendChild(downloadLink);
+                    }
+
+                    form.reset();
+
+                    // Add a nice animation to the form
+                    form.style.transform = 'scale(0.98)';
+                    setTimeout(() => {
+                        form.style.transform = 'scale(1)';
+                    }, 150);
+
+                    // Scroll to top to show the alert
+                    alertContainer.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    throw new Error(result.message || 'Failed to submit form');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('❌ Form Submission Failed: ' + error.message + '. Please try again.', 'error');
+            } finally {
+                // Reset button state
+                submitBtn.disabled = false;
+                btnText.style.opacity = '1';
+                loading.style.display = 'none';
+            }
+        });
+
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', () => {
+            // Animate form elements on page load
+            const formGroups = document.querySelectorAll('.form-group');
+            formGroups.forEach((group, index) => {
+                group.style.opacity = '0';
+                group.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    group.style.transition = 'all 0.4s ease';
+                    group.style.opacity = '1';
+                    group.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+        
+    </script>
+</body>
+
+</html>

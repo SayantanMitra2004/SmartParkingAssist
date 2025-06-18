@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkEase - Find Nearby Parking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .location-info {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .refresh-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 10px;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .parking-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .parking-bubble {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .parking-bubble::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .parking-bubble:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        .station-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .station-address {
+            color: #7f8c8d;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .station-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .rate {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .availability {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .availability-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .available {
+            background: #00b894;
+        }
+
+        .limited {
+            background: #fdcb6e;
+        }
+
+        .full {
+            background: #e17055;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .distance {
+            color: #74b9ff;
+            font-weight: 600;
+        }
+
+        .get-parking-btn {
+            width: 100%;
+            background: linear-gradient(45deg, #6c5ce7, #a29bfe);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .get-parking-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .get-parking-btn:hover::before {
+            left: 100%;
+        }
+
+        .get-parking-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+            margin: 50px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+            margin: 50px 0;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .parking-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .station-details {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🅿️ ParkEase</h1>
+            <p>Find nearby parking stations instantly</p>
+        </div>
+
+        <div class="location-info">
+            <h3>📍 Current Location: <span id="current-location">{{ location }}</span></h3>
+
+            <p>Searching for parking stations within 2km radius</p>
+            <button class="refresh-btn" onclick="refreshStations()">🔄 Refresh Stations</button>
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterStations('all')">All Stations</button>
+            <button class="filter-btn" onclick="filterStations('available')">Available Only</button>
+            <button class="filter-btn" onclick="filterStations('cheap')">Budget Friendly</button>
+            <button class="filter-btn" onclick="filterStations('premium')">Premium</button>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <p>🔄 Finding nearby parking stations...</p>
+        </div>
+
+        <div id="parking-grid" class="parking-grid"></div>
+
+        <div id="no-results" class="no-results" style="display: none;">
+            <h3>No parking stations found</h3>
+            <p>Try adjusting your filters or refresh to search again</p>
+        </div>
+    </div>
+
+    <script>
+        let parkingStations = [];
+        let currentFilter = 'all';
+        let displayedStations = [];
+
+        async function fetchStations() {
+            const res = await fetch('/stations');
+            parkingStations = await res.json();
+            displayedStations = [...parkingStations];
+            renderStations();
+        }
+
+        function getAvailabilityClass(status) {
+            switch (status) {
+                case 'available': return 'available';
+                case 'limited': return 'limited';
+                case 'full': return 'full';
+                default: return 'available';
+            }
+        }
+
+        function getAvailabilityText(status, spots) {
+            switch (status) {
+                case 'available': return `${spots} spots available`;
+                case 'limited': return `Only ${spots} left`;
+                case 'full': return 'Full - No spots';
+                default: return 'Unknown';
+            }
+        }
+
+        function createParkingBubble(station) {
+            return `
+                <div class="parking-bubble" data-category="${station.category}" data-availability="${station.availability}">
+                    <div class="station-name"><strong>${station.name}</strong></div>
+                    <div class="station-address">${station.address}</div>
+                    <div class="station-details">
+                        <div class="rate">${station.rate}</div>
+                        <div class="availability">
+                            <span class="availability-dot ${getAvailabilityClass(station.availability)}"></span>
+                            <span>${getAvailabilityText(station.availability, station.spots)}</span>
+                        </div>
+                        <div class="distance">${station.distance} away</div>
+                    </div>
+                    <button class="get-parking-btn" onclick="getParkingSpot('${station.name}')">🚗 Get Parking Spot</button>
+                </div>
+            `;
+        }
+
+        function renderStations() {
+            const grid = document.getElementById('parking-grid');
+            const noResults = document.getElementById('no-results');
+
+            if (displayedStations.length === 0) {
+                grid.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            noResults.style.display = 'none';
+            grid.innerHTML = displayedStations.map(createParkingBubble).join('');
+        }
+
+        function filterStations(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            switch (filter) {
+                case 'all':
+                    displayedStations = [...parkingStations];
+                    break;
+                case 'available':
+                    displayedStations = parkingStations.filter(s => s.availability !== 'full');
+                    break;
+                case 'cheap':
+                    displayedStations = parkingStations.filter(s => s.category === 'budget');
+                    break;
+                case 'premium':
+                    displayedStations = parkingStations.filter(s => s.category === 'premium');
+                    break;
+            }
+
+            renderStations();
+        }
+
+        function refreshStations() {
+            const loading = document.getElementById('loading');
+            const grid = document.getElementById('parking-grid');
+            loading.style.display = 'block';
+            grid.style.opacity = '0.5';
+
+            setTimeout(() => {
+                fetchStations().then(() => {
+                    loading.style.display = 'none';
+                    grid.style.opacity = '1';
+                });
+            }, 1000);
+        }
+
+        function getParkingSpot(name) {
+            alert(`🚗 Parking booked at ${name}`);
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchStations);
+    </script>
+</body>
+</html>
